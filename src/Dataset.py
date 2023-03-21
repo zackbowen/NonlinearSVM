@@ -3,26 +3,30 @@ import numpy as np
 import csv
 import os.path
 
-def readData():
-    # Reads the Iris Dataset from the csv file in utils
-    # Last column (4) contains the label information
-    # 1 = Iris-setosa
-    # 2 = Iris-versicolor
-    # 3 = Iris-virginica
+def enumData(src_filepath: str) -> pd.DataFrame:
+    """
+    Summary:
+        Reads in a .csv file and enumerates the classes
+        1 = "Iris-setosa"
+        2 = "Iris-versicolor"
+        3 = "Iris-virginica"
 
-    data = np.empty([150, 5])
-    i = 0
-    with open('utils/iris_data', newline='') as csvfile:
-        filereader = csv.reader(csvfile, delimiter=',')
-        for row in filereader:
-            r = np.array(row)
-            # Convert the rows from strings to floats
-            r_float = [float(r[0]), float(r[1]), float(r[2]), float(r[3])]
+    Parameters:
+        src_filepath (str): A filepath string to the dataset to split
+    Returns:
+        df (pd.DataFrame): A dataframe object with the enumerated data
+    """
+    
+     # Validate input path
+    if not os.path.isfile(src_filepath):
+        raise Exception("src_filepath is not a file.")
 
-            data[i] = np.append(r_float, int(i / 50 + 1))
+    # Read input .csv
+    data = pd.read_csv(src_filepath, header=0, index_col=0) # include header row
+    df = pd.DataFrame(data)
+    df.replace({"Iris-setosa":1, "Iris-versicolor":2, "Iris-virginica":3}, inplace=True)
 
-            i += 1
-    return data
+    return df
 
 def splitData(src_filepath: str, training_size=0.50, validation_size=0.00) -> None:
     """
@@ -35,7 +39,7 @@ def splitData(src_filepath: str, training_size=0.50, validation_size=0.00) -> No
     Parameters:
         src_filepath (str): A filepath string to the dataset to split
         training_size (float): A ratio/int which determines the training set size (default is 0.50)
-        validation_size (float): A ratio/int which determines the validation set size (default is (0.50)
+        validation_size (float): A ratio/int which determines the validation set size (default is (0.00)
     Returns:
         None
     """
@@ -45,7 +49,7 @@ def splitData(src_filepath: str, training_size=0.50, validation_size=0.00) -> No
         raise Exception("src_filepath is not a file.")
 
     # Read input .csv
-    data = pd.read_csv(src_filepath, header=0, index_col=0) # include header row and designates "Id" as the index column
+    data = pd.read_csv(src_filepath, header=0) # include header row
     df = pd.DataFrame(data)
     num_samples = len(df.index)
 
@@ -69,8 +73,8 @@ def splitData(src_filepath: str, training_size=0.50, validation_size=0.00) -> No
     # Write data to their respective .csv files
     directory, filename = os.path.split(src_filepath)
     filename, file_extension = os.path.splitext(filename)
-    training_data.to_csv(directory + "/" + filename + "_training" + file_extension)
-    validation_data.to_csv(directory + "/" + filename + "_validation" + file_extension)
-    testing_data.to_csv(directory + "/" + filename + "_testing" + file_extension)
+    training_data.to_csv(directory + "/" + filename + "_training" + file_extension, index=False)
+    validation_data.to_csv(directory + "/" + filename + "_validation" + file_extension, index=False)
+    testing_data.to_csv(directory + "/" + filename + "_testing" + file_extension, index=False)
 
     return

@@ -1,11 +1,14 @@
 import pandas as pd
 import numpy as np
 import csv
-from Dataset import readData
+import Dataset
+import SVM
 
 def main():
-    data = readData()
-    print(data)
+    #data = readData()
+    #print(data)
+
+    SVM.linearSVM()
 
 if __name__ == "__main__":
     main()

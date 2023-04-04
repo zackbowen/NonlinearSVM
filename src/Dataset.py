@@ -24,8 +24,7 @@ def readData():
             i += 1
     return data
 
-
-def enumData(src_filepath: str) -> pd.DataFrame:
+def enumData(src_filepath: str) -> np.array:
     """
     Summary:
         Reads in a .csv file and enumerates the classes
@@ -48,7 +47,8 @@ def enumData(src_filepath: str) -> pd.DataFrame:
     df = pd.DataFrame(data)
     df.replace({"Iris-setosa":1, "Iris-versicolor":2, "Iris-virginica":3}, inplace=True)
 
-    return df
+    # Convert to np.array
+    return df.to_numpy()
 
 def splitData(src_filepath: str, training_size=0.50, validation_size=0.00) -> None:
     """

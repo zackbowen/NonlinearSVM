@@ -5,10 +5,18 @@ import Dataset
 
 #from sklearn.metrics import accuracy_score
 
+
+'''
+SMO - Sequential Minimal Optimization
+There are two components to SMO: an analytic method for solving for the two Lagrange
+multipliers, and a heuristic for choosing which multipliers to optimize.
+'''
+
 #https://github.com/je-suis-tm/machine-learning/blob/master/sequential%20minimal%20optimization.ipynb
 
 # Source: https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-98-14.pdf
-class SVM:
+
+class SMO:
     x_train = []
     y_train = []
 
@@ -29,7 +37,15 @@ class SVM:
         n = size[0]
         d = size[1]
         self.x_train = training_data[:,0:d-1]
+
         self.y_train = training_data[:,d-1]
+
+        # Practice Data
+        self.x_train = np.array([(1, 2), (2, 3), (4, 5), (12, 1), (15, 2), (14, 1)])
+        n = 6;
+        self.y_train = np.array([1, 1, 1, -1, -1, -1])
+        d = 2;
+        #
 
         # Reset alphas, beta, errors, tol, C, and kernel_type
         self.alphas = np.zeros((n,1))
@@ -49,21 +65,25 @@ class SVM:
 
             # Single passes through the entire set
             if examine_all:
+                #print(1)
                 for i2 in range(n):
                     num_changed += self.examineExample(i2)
             # Multiple passes through non-bound samples (Lagrange multiplier are neither 0 nor C)
             else:
-                for i2 in self.alphas:
-                    if(self.alphas[i2] != 0 and self.alphas[i2] != C):
+                #print(2)
+                for a2 in self.alphas:
+                    if(a2 != 0 and a2 != C):
                         num_changed += self.examineExample(i2)
-
+            #print(num_changed)
             if(examine_all):
                 examine_all = False
             elif(num_changed == 0):
                 examine_all = True
+
         return self.alphas, self.beta
 
     def examineExample(self, i2) -> int:
+        # Checks the alphas to see if they could be support vectors
         a2 = self.alphas[i2]
         y2 = self.y_train[i2]
         e2 = self.errors[i2]
@@ -72,10 +92,15 @@ class SVM:
 
         # Iterate through all alphas to see if it could be a support vector
         for idx in range(len(self.alphas)):
+            #print(self.alphas[idx], idx)
+            #print(len(support_vectors))
             if self.alphas[idx] != 0 and self.alphas[idx] != self.C:
                 support_vectors.append(idx)
 
-        if((r2 < -self.tol and a2 < C) or (r2 > self.tol and a2 > 0)):
+
+        if((r2 < -self.tol and a2 < self.C) or (r2 > self.tol and a2 > 0)):
+            print(r2)
+            print(len(support_vectors))
             if(len(support_vectors) > 1):
                 i1 = self.secondChoiceHeuristic(e2, i2)
                 if self.takeStep(i1,i2):
@@ -91,6 +116,9 @@ class SVM:
                 for i1 in self.alphas:
                     if self.takeStep(i1,i2):
                         return 1
+            sampling = random.sample(list(np.arange(len(self.alphas))), len(self.alphas))
+            for m in sampling:
+                self.takeStep(m,i2)
         return 0
         
     def secondChoiceHeuristic(self, e2, i2) -> int:
@@ -113,9 +141,10 @@ class SVM:
         """
             This is where alpha changes!
         """
+        #print("!!!!!")
         if(i1 == i2):
             return 0
-        
+
         a1 = self.alphas[i1]
         y1 = self.y_train[i1]
         e1 = self.errors[i1]
@@ -126,13 +155,56 @@ class SVM:
 
         s = y1*y2
 
-        [L,H] = self.LH(a1,a2,y1,y2)
+        [L,H] = self.calcLH(a1,a2,y1,y2)
 
         # TODO:
-    
+        k11 = self.kernel(self.x_train[i1], self.x_train[i1])
+        k12 = self.kernel(self.x_train[i1], self.x_train[i2])
+        k22 = self.kernel(self.x_train[i2], self.x_train[i2])
+
+        eta = k11 +  k12 -  2*k22
+        #print(eta)
+        a2new = a2 + y2*(e1-e2)/eta
+        #print(e1-e2)
+        #print(a2new)
+
+        a2new_clipped = 0
+
+        if a2new > H:
+            a2new_clipped = H
+        elif a2new > L:
+            a2new_clipped = a2new
+        else:
+            a2new_clipped = L
+
+        a1new = a1 + s*(a2new-a2new_clipped)
+
+        b_new = 0
+
+        b1 = e1 + y1 * (a1new - a1) * k11 + y2 * (a2new_clipped - a2) * k12 + self.beta
+        b2 = e2 + y1 * (a1new - a1) * k12 + y2 * (a2new_clipped - a2) * k22 + self.beta
+
+        if a1new > 0 and a1new < self.C:
+            b_new = b1
+        elif a2new_clipped > 0 and a2new_clipped < self.C:
+            b_new = b2
+        else:
+            b_new = (b1 + b2) / 2
+
+        self.alphas[i1] = a1new
+        self.alphas[i2] = a2new
+
+        for i in range(len(self.alphas)):
+            if i != i1 and i != i2:
+                self.errors[i] += y1 * (a1new - a1) * self.kernel(self.x_train[i1], self.x_train[i]) + \
+                                  y2 * (a2new_clipped - a2) * self.kernel(self.x_train[i2], self.x_train[i]) + \
+                                  (self.beta - b_new)
+
+        self.beta = b_new
+        print(self.alphas)
         return 1
     
-    def LH(self, a1, a2, y1, y2) -> tuple[int, int]:
+    def calcLH(self, a1, a2, y1, y2) -> tuple[int, int]:
         """
             Equations 13 and 14 (pg. 7)
         """
@@ -152,7 +224,30 @@ class SVM:
             K_x1_x2 = (np.mat(x1)*np.mat(x2).T).tolist()[0][0]
         return K_x1_x2
 
-"""
+    def classify(self):
+        '''
+            Assigns to a class based on the sign??
+
+            This needs fixed up I think, alpha values seem to reflect the necessary class
+
+        '''
+
+        forecast = []
+
+        x_test= self.x_train
+
+        for j in x_test:
+            summation = 0
+            for i in range(len(self.x_train)):
+                summation += self.alphas[i] * self.y_train[i] * self.kernel(self.x_train[i], j)
+            forecast.append(summation)
+
+        forecast = list(np.sign(forecast))
+        print(self.y_train)
+        print(forecast)
+
+'''
+
 import pandas as pd
 import numpy as np
 import csv
@@ -199,4 +294,4 @@ def linearSVM():
             predictions.append(-1)
     print("Accuracy: " + str(accuracy_score(y_train,predictions)))
 
-"""
+'''

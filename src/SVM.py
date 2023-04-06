@@ -1,9 +1,5 @@
-import pandas as pd
 import numpy as np
 import random
-import math
-
-#from sklearn.metrics import accuracy_score
 
 #https://github.com/je-suis-tm/machine-learning/blob/master/sequential%20minimal%20optimization.ipynb
 
@@ -23,8 +19,9 @@ class SVM:
     C = 1.0
     kernel_type = "linear"
     sigma = 1.0
+    m = 2
 
-    def trainSVM(self, x_train, y_train, tol=pow(10,-3), eps=pow(10,-3), C=1.0, kernel_type="linear", sigma=1.0):
+    def trainSVM(self, x_train, y_train, tol=pow(10,-3), eps=pow(10,-3), C=1.0, kernel_type="linear", sigma=1.0, m=2):
         self.x_train = x_train
         self.y_train = y_train
         n = len(self.x_train)
@@ -38,6 +35,7 @@ class SVM:
         self.C = C
         self.kernel_type = kernel_type
         self.sigma = sigma
+        self.m = m
 
         """
             (2.2) - Heuristics for Choosing Which Multipliers To Optimize (pg. 8)
@@ -183,13 +181,24 @@ class SVM:
         """
         if self.kernel_type == "linear":
             K_x1_x2 = np.dot(x1,x2)
-        elif self.kernel_type == "polynomial":
-            K_x1_x2 = np.dot(x1,x2)
+        elif self.kernel_type == "polynomial" or self.kernel_type == "poly":
+            K_x1_x2 = pow(np.dot(x1,x2),self.m)
         elif self.kernel_type == "gaussian" or self.kernel_type == "rbf":
             K_x1_x2 = np.exp(-pow(np.linalg.norm(x1-x2),2) / (2*pow(self.sigma,2)))
         return K_x1_x2
     
-    ## Equations ======================================================
+    def testSVM(self,x_test) -> int:
+        """
+        Accepts a testing sample and evaluates it on the trained weights.
+
+        Returns:
+            +1 if positive, -1 otherwise.
+        """
+        return np.sign(self.u(x_test))
+    
+    """
+        Required Equations ===============================================================
+    """
     def Ei(self,i) -> float:
         xi = self.x_train[i]
         yi = self.y_train[i]
@@ -281,62 +290,3 @@ class SVM:
             Eq. 22 (pg. 9)
         """
         return self.weights + y1*(a1_new-a1)*x1 + y2*(a2_clipped-a2)*x2
-    
-    def testSVM(self,x_test) -> int:
-        """
-        Accepts a testing sample and evaluates it on the trained weights.
-
-        Returns:
-            +1 if positive, -1 otherwise.
-        """
-        return np.sign(self.u(x_test))
-
-
-"""
-import pandas as pd
-import numpy as np
-import csv
-import matplotlib.pyplot as plt
-from sklearn.metrics import accuracy_score
-
-def linearSVM():
-    train_f1 = np.array([1, 1, 2, 2, 4, 5, 4]).reshape(7,1)
-    train_f2 = np.array([2, 3, 3, 5, 8, 9, 10]).reshape(7,1)
-    y_train = np.array([1, 1, 1, 1, -1, -1, -1]).reshape(7,1)
-
-    #plt.scatter(train_f1[:4], train_f2[:4], color='red')
-    #plt.scatter(train_f1[4:], train_f2[4:], color='blue')
-    #plt.show()
-
-    epochs = 1
-    alpha = 0.0001
-
-    w1 = np.zeros((train_f1.size, 1))
-    w2 = np.zeros((train_f1.size, 1))
-
-    while(epochs < 5000):
-        y = w1 * train_f1 + w2 * train_f2
-        prod = y * y_train
-        count = 0
-        for val in prod:
-            # Correct Classification
-            if(val >= 1):
-                w1 = w1 - alpha * (2 * 1 / epochs * w1)
-                w2 = w2 - alpha * (2 * 1 / epochs * w2)
-            # Incorrect Classification
-            else:
-                w1 = w1 + alpha * (train_f1[count] * y_train[count] - 2 * 1 / epochs * w1)
-                w2 = w2 + alpha * (train_f2[count] * y_train[count] - 2 * 1 / epochs * w2)
-            count += 1
-        epochs += 1
-    print(y)
-
-    predictions = []
-    for val in y:
-        if (val > 1):
-            predictions.append(1)
-        else:
-            predictions.append(-1)
-    print("Accuracy: " + str(accuracy_score(y_train,predictions)))
-
-"""

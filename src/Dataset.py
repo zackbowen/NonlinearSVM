@@ -75,7 +75,7 @@ def splitAndEnumData(dataFrame: pd.DataFrame, labelMap: dict) -> tuple[np.array,
             temp = oldData[row_idx]
             temp[-1] = labelMap[current_label]
             newData = np.append(newData,[temp],axis=0)
-    return newData[:,:-1], newData[:,-1]
+    return newData[:,:-1], newData[:,-1].astype(np.int_)
 
 def splitDataToCSV(src_filepath: str, training_size=0.50, validation_size=0.00) -> None:
     """

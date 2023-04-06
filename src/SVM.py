@@ -1,13 +1,13 @@
 import pandas as pd
 import numpy as np
 import random
-import Dataset
+import math
 
 #from sklearn.metrics import accuracy_score
 
 #https://github.com/je-suis-tm/machine-learning/blob/master/sequential%20minimal%20optimization.ipynb
 
-# Source: https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-98-14.pdf
+# Paper: https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-98-14.pdf
 class SVM:
     #weights = []
 
@@ -22,19 +22,22 @@ class SVM:
     eps = pow(10,-3) # (end of pg. 8)
     C = 1.0
     kernel_type = "linear"
+    sigma = 1.0
 
-    def trainSVM(self, x_train: np.array, y_train: np.array, tol=pow(10,-3), C=5.0, kernel_type="linear"):
+    def trainSVM(self, x_train, y_train, tol=pow(10,-3), eps=pow(10,-3), C=1.0, kernel_type="linear", sigma=1.0):
         self.x_train = x_train
         self.y_train = y_train
         n = len(self.x_train)
 
-        # Reset alphas, b, errors, tol, C, and kernel_type
+        # Set model parameters
         self.alphas = np.zeros((n,1))
         self.b = 0
         self.errors = -1*np.ones((n,1))
         self.tol = tol
+        self.eps = eps
         self.C = C
         self.kernel_type = kernel_type
+        self.sigma = sigma
 
         """
             (2.2) - Heuristics for Choosing Which Multipliers To Optimize (pg. 8)
@@ -106,14 +109,13 @@ class SVM:
         elif E2 <= 0:
             return max_idx
 
-    def takeStep(self, i1: int, i2: int) -> int:
+    def takeStep(self, i1, i2) -> int:
         """
             This is where alpha changes!
         """
         if(i1 == i2):
             return 0
         
-        #print("i1",i1,type(i1))
         a1 = self.alphas[i1]
         x1 = self.x_train[i1]
         y1 = self.y_train[i1]
@@ -175,21 +177,25 @@ class SVM:
 
         return 1
     
-    def kernel(self,x1,x2) -> float:
+    def kernel(self, x1, x2) -> float:
         """
             Allows for the selection of the kernel to use.
         """
         if self.kernel_type == "linear":
             K_x1_x2 = np.dot(x1,x2)
+        elif self.kernel_type == "polynomial":
+            K_x1_x2 = np.dot(x1,x2)
+        elif self.kernel_type == "gaussian" or self.kernel_type == "rbf":
+            K_x1_x2 = np.exp(-pow(np.linalg.norm(x1-x2),2) / (2*pow(self.sigma,2)))
         return K_x1_x2
     
     ## Equations ======================================================
-    def Ei(self,i):
+    def Ei(self,i) -> float:
         xi = self.x_train[i]
         yi = self.y_train[i]
         return self.u(xi) - yi
     
-    def u(self,xi):
+    def u(self,xi) -> float:
         """
             Eq. 10 (pg. 4)
         """
@@ -198,8 +204,9 @@ class SVM:
             aj = self.alphas[j]
             xj = self.x_train[j]
             yj = self.y_train[j]
-            u += yj*aj*self.kernel(xj,xi) - self.b
-        return u
+            u += yj*aj*self.kernel(xj,xi)
+        u -= self.b
+        return u 
 
     def LH(self,a1,a2,y1,y2) -> tuple[int, int]:
         """
@@ -213,19 +220,19 @@ class SVM:
             H = min(self.C,a2+a1)
         return L, H
     
-    def eta(self,k11,k12,k22):
+    def eta(self,k11,k12,k22) -> float:
         """
             Eq. 15 (pg. 7)
         """
         return k11 + k22 - 2*k12
     
-    def a2_new(self,a2,y2,E1,E2,eta):
+    def a2_new(self,a2,y2,E1,E2,eta) -> float:
         """
             Eq. 16 (pg. 7)
         """
         return a2 + (y2*(E1-E2)/eta)
     
-    def a2_clipped(self,a2_new,L,H):
+    def a2_clipped(self,a2_new,L,H) -> float:
         """
             Eq. 17 (pg. 7)
         """
@@ -236,13 +243,13 @@ class SVM:
         else: # elif(a2_new <= L):
             return L
 
-    def a1_new(self,a1,a2,a2_clipped,s):
+    def a1_new(self,a1,a2,a2_clipped,s) -> float:
         """
             Eq. 18 (pg. 7)
         """
         return a1 + s*(a2-a2_clipped)
     
-    def LHobj(self,a1,a2,E1,E2,y1,y2,s,L,H,k11,k12,k22):
+    def LHobj(self,a1,a2,E1,E2,y1,y2,s,L,H,k11,k12,k22) -> tuple[float,float]:
         """
             Eq. 19 (pg. 8)
         """
@@ -257,25 +264,25 @@ class SVM:
 
         return Lobj, Hobj
     
-    def b1(self,a1,a1_new,a2,a2_clipped,E1,y1,y2,k11,k12):
+    def b1(self,a1,a1_new,a2,a2_clipped,E1,y1,y2,k11,k12) -> float:
         """
             Eq. 20 (pg. 9)
         """
         return E1 + y1*(a1_new-a1)*k11 + y2*(a2_clipped-a2)*k12 + self.b
     
-    def b2(self,a1,a1_new,a2,a2_clipped,E2,y1,y2,k12,k22):
+    def b2(self,a1,a1_new,a2,a2_clipped,E2,y1,y2,k12,k22) -> float:
         """
             Eq. 21 (pg. 9)
         """
         return E2 + y1*(a1_new-a1)*k12 + y2*(a2_clipped-a2)*k22 + self.b
     
-    def w_new(self,a1,a1_new,a2,a2_clipped,x1,x2,y1,y2):
+    def w_new(self,a1,a1_new,a2,a2_clipped,x1,x2,y1,y2) -> np.array:
         """
             Eq. 22 (pg. 9)
         """
         return self.weights + y1*(a1_new-a1)*x1 + y2*(a2_clipped-a2)*x2
     
-    def testSVM(self,x_test):
+    def testSVM(self,x_test) -> int:
         """
         Accepts a testing sample and evaluates it on the trained weights.
 

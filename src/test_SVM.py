@@ -1,7 +1,7 @@
-import Dataset
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 
+import Dataset
 from SVM import SVM
 from plot_Data import plotData, reduceDataset2D
 
@@ -20,23 +20,23 @@ def main():
     #kernel_type = "rbf"
     kernel_type = "linear"
     #kernel_type = "poly"
+    C = 1.0
     sigma = 1.0
+    m = 2
 
     # Train SVM
-    _svm = SVM()
-    _svm.trainSVM(x_train, y_train, kernel_type=kernel_type, sigma=sigma)
+    _svm = SVM(kernel_type=kernel_type, C=C, sigma=sigma, m=m)
+    _svm.trainSVM(x_train, y_train)
 
     # Test SVM
-    num_correct = 0
-    for idx in range(len(x_test)):
-        # Correct
-        if(_svm.testSVM(x_test[idx]) == y_test[idx]):
-            num_correct += 1
-    accuracy = num_correct/len(x_test)
-    print("Custom SVM Accuracy: %.3f" % accuracy)
+    y_pred = _svm.testSVM(x_test)
+    print("Our SVM Accuracy: %.3f" % accuracy_score(y_test, y_pred))
 
     # Train SVM
-    _svm = SVC(kernel=kernel_type, C=1.0, gamma=sigma)
+    # For kernel_type="poly", what would be m is gamma
+    if(kernel_type == "poly"):
+        sigma = m
+    _svm = SVC(kernel=kernel_type, C=C, gamma=sigma)
     _svm.fit(x_train, y_train)
 
     # Test SVM
@@ -46,7 +46,6 @@ def main():
     # Plotting
     # visualization of linear kernel
     plotData(x_test, y_test, _svm)
-
 
 if __name__ == "__main__":
     main()

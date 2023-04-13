@@ -6,15 +6,22 @@ from SVM import SVM
 from plot_Data import plotData, reduceDataset2D
 
 def main():
+    # Re-split data
+    src_filepath = "./utils/iris_original.csv"
+    #Dataset.splitDataToCSV(src_filepath)
+
+    # "Iris-setosa", "Iris-versicolor", and "Iris-virginica"
+    label_map = {"Iris-versicolor":1, "Iris-virginica":-1}
+
     # Read training data
     training_data = Dataset.readCSV("./utils/iris_original_training.csv")
-    [x_train, y_train] = Dataset.splitAndEnumData(training_data, {"Iris-setosa":1, "Iris-versicolor":-1})
+    [x_train, y_train] = Dataset.splitAndEnumData(training_data, label_map)
 
     # Read testing data
     testing_data = Dataset.readCSV("./utils/iris_original_testing.csv")
-    [x_test, y_test] = Dataset.splitAndEnumData(testing_data, {"Iris-setosa":1, "Iris-versicolor":-1})
+    [x_test, y_test] = Dataset.splitAndEnumData(testing_data, label_map)
 
-    [x_train, x_test] = reduceDataset2D(x_train, x_test, col1=1, col2=3)
+    [x_train, x_test] = reduceDataset2D(x_train, x_test, col1=1, col2=2)
 
     # Kernel type
     #kernel_type = "rbf"
@@ -45,7 +52,7 @@ def main():
 
     # Plotting
     # visualization of linear kernel
-    plotData(x_test, y_test, _svm)
+    #plotData(x_test, y_test, _svm)
 
 if __name__ == "__main__":
     main()

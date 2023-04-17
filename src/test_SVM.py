@@ -1,9 +1,10 @@
-from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
+from matplotlib import pyplot as plt
+import time
 
 import Dataset
 from SVM import SVM
-from plot_Data import plotData, reduceDataset2D
+import plot_Data
 
 def main():
     # Re-split data
@@ -21,38 +22,35 @@ def main():
     testing_data = Dataset.readCSV("./utils/iris_original_testing.csv")
     [x_test, y_test] = Dataset.splitAndEnumData(testing_data, label_map)
 
-    [x_train, x_test] = reduceDataset2D(x_train, x_test, col1=1, col2=2)
+    # Reduce training and testing data to sepal width and length
+    [x_train, x_test] = plot_Data.reduceDataset2D(x_train, x_test, col1=1, col2=2)
 
-    # Kernel type
-    #kernel_type = "rbf"
-    kernel_type = "linear"
-    #kernel_type = "poly"
+    # Train all SVMs
     C = 1.0
     sigma = 1.0
     m = 2
+    SVMs = []
+    kernels = ["linear", "poly", "rbf", "sigmoid"]
+    for kernel_type in kernels:
+        svm = SVM(kernel_type=kernel_type, C=C, sigma=sigma, m=m)
+        start = time.time()
+        svm.trainSVM(x_train, y_train)
+        end = time.time()
+        SVMs.append(svm)
+        print(str.format("{0} trained in {1:.4f} seconds", kernel_type, end-start))
 
-    # Train SVM
-    _svm = SVM(kernel_type=kernel_type, C=C, sigma=sigma, m=m)
-    _svm.trainSVM(x_train, y_train)
+    # Test the SVMs
+    for i in range(len(SVMs)):
+        # Predict
+        svm = SVMs[i]
+        y_pred = svm.testSVM(x_test)
 
-    # Test SVM
-    y_pred = _svm.testSVM(x_test)
-    print("Our SVM Accuracy: %.3f" % accuracy_score(y_test, y_pred))
+        # Accuracy
+        print(str.format("{0} Accuracy: {1:.4f}", kernels[i], accuracy_score(y_test, y_pred)))
 
-    # Train SVM
-    # For kernel_type="poly", what would be m is gamma
-    if(kernel_type == "poly"):
-        sigma = m
-    _svm = SVC(kernel=kernel_type, C=C, gamma=sigma)
-    _svm.fit(x_train, y_train)
-
-    # Test SVM
-    y_pred = _svm.predict(x_test)
-    print("Sklearn SVM Accuracy: %.3f" % accuracy_score(y_test, y_pred))
-
-    # Plotting
-    # visualization of linear kernel
-    #plotData(x_test, y_test, _svm)
+        # Plot
+        plot_Data.plotResults(x_test, y_test, svm)
+        plt.savefig("./graphs/" + kernels[i] + "_test.png")
 
 if __name__ == "__main__":
     main()

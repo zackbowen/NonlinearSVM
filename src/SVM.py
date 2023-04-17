@@ -30,15 +30,7 @@ class SVM:
         self.sigma = sigma
         self.m = m
 
-    def trainSVM(self, x_train, y_train, tol=pow(10,-3), eps=pow(10,-3), C=1.0, kernel_type="linear", sigma=1.0, m=2):
-        # Set model parameters
-        self.tol = tol
-        self.eps = eps
-        self.C = C
-        self.kernel_type = kernel_type
-        self.sigma = sigma
-        self.m = m
-
+    def trainSVM(self, x_train, y_train):
         # Set required training variables
         self.x_train = x_train
         self.y_train = y_train
@@ -62,7 +54,7 @@ class SVM:
             # Multiple passes through non-bound samples (alphas multiplier are neither 0 nor C)
             else:
                 for i2 in range(n):
-                    if(self.alphas[i2] != 0 and self.alphas[i2] != C):
+                    if(self.alphas[i2] != 0 and self.alphas[i2] != self.C):
                         num_changed += self.examineExample(i2)
 
             if(examine_all):

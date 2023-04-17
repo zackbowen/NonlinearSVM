@@ -25,6 +25,7 @@ def plotResults(x_test, y_test, svm):
     plt.xticks(())
     plt.yticks(())
 
+
 def plotData(x, y, _svm):
     '''
     :param x: data to be visualized (nx2)

@@ -19,9 +19,11 @@ class SVM:
     kernel_type = "linear"
     sigma = 1.0
     m = 2
+    c = 1
+    gamma = 0.25
 
     # Constructor
-    def __init__(self, tol=pow(10,-3), eps=pow(10,-3), C=1.0, kernel_type="linear", sigma=1.0, m=2):
+    def __init__(self, tol=pow(10,-3), eps=pow(10,-3), C=1.0, kernel_type="linear", sigma=1.0, m=2, gamma=0.25):
         # Set model parameters
         self.tol = tol
         self.eps = eps
@@ -29,6 +31,7 @@ class SVM:
         self.kernel_type = kernel_type
         self.sigma = sigma
         self.m = m
+        self.gamma = gamma
 
     def trainSVM(self, x_train, y_train):
         # Set required training variables
@@ -184,11 +187,11 @@ class SVM:
         if self.kernel_type == "linear":
             K_x1_x2 = np.dot(x1,x2)
         elif self.kernel_type == "polynomial" or self.kernel_type == "poly":
-            K_x1_x2 = pow(np.dot(x1,x2),self.m)
+            K_x1_x2 = pow(np.dot(x1,x2)+self.c,self.m)
         elif self.kernel_type == "gaussian" or self.kernel_type == "rbf":
             K_x1_x2 = np.exp(-pow(np.linalg.norm(x1-x2),2) / (2*pow(self.sigma,2)))
         elif self.kernel_type == "sigmoid":
-            K_x1_x2 = np.tanh(self.sigma*np.dot(x1,x2))
+            K_x1_x2 = np.tanh(self.gamma*np.dot(x1,x2) + self.c)
         return K_x1_x2
     
     def testSVM(self,x_test) -> int:

@@ -23,16 +23,18 @@ def main():
     [x_test, y_test] = Dataset.splitAndEnumData(testing_data, label_map)
 
     # Reduce training and testing data to sepal width and length
-    [x_train, x_test] = plot_Data.reduceDataset2D(x_train, x_test, col1=1, col2=2)
+    [x_train, x_test] = plot_Data.reduceDataset2D(x_train, x_test, col1=0, col2=3)
 
     # Train all SVMs
     C = 1.0
     sigma = 1.0
     m = 2
+    gamma = 1 / len(x_test[1,:]) # 1 / number of features
+
     SVMs = []
     kernels = ["linear", "poly", "rbf", "sigmoid"]
     for kernel_type in kernels:
-        svm = SVM(kernel_type=kernel_type, C=C, sigma=sigma, m=m)
+        svm = SVM(kernel_type=kernel_type, C=C, sigma=sigma, m=m, gamma=gamma)
         start = time.time()
         svm.trainSVM(x_train, y_train)
         end = time.time()
@@ -51,6 +53,7 @@ def main():
         # Plot
         plot_Data.plotResults(x_test, y_test, svm)
         plt.savefig("./graphs/" + kernels[i] + "_test.png")
+        plt.clf()
 
 if __name__ == "__main__":
     main()

@@ -77,7 +77,7 @@ def splitAndEnumData(dataFrame: pd.DataFrame, labelMap: dict) -> tuple[np.array,
             newData = np.append(newData,[temp],axis=0)
     return newData[:,:-1], newData[:,-1].astype(np.int_)
 
-def normalizeData(x)  -> np.array:
+def normalizeData(x) -> np.array:
     # Normalize each feature (column)
     for i in range(len(x[0,:])):
         x_col = x[:,i]

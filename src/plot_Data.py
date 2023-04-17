@@ -15,6 +15,7 @@ def plotResults(x_test, y_test, svm):
     # Put the result into a color plot
     Z = Z.reshape(xx.shape)
     plt.contourf(xx, yy, Z, cmap=plt.cm.coolwarm, alpha=0.8)
+    plt.colorbar()
 
     # Plot also the training points
     plt.scatter(x_test[:, 0], x_test[:, 1], c=y_test, cmap=plt.cm.coolwarm)
@@ -22,8 +23,8 @@ def plotResults(x_test, y_test, svm):
     plt.ylabel('Sepal Width (cm)')
     plt.xlim(xx.min(), xx.max())
     plt.ylim(yy.min(), yy.max())
-    plt.xticks(())
-    plt.yticks(())
+   #plt.xticks(())
+   # plt.yticks(())
 
 
 def plotData(x, y, _svm):

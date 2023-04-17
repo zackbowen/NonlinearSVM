@@ -1,10 +1,15 @@
 from sklearn.metrics import accuracy_score
+from sklearn import preprocessing
 from matplotlib import pyplot as plt
 import time
 
 import Dataset
 from SVM import SVM
 import plot_Data
+
+test_all = False # If true, predicts using all dataset samples, not just testing samples.
+normalize = False # If true, all data is normalized
+standardize = False # If true, all data is standardized
 
 def main():
     # Re-split data
@@ -22,8 +27,26 @@ def main():
     testing_data = Dataset.readCSV("./utils/iris_original_testing.csv")
     [x_test, y_test] = Dataset.splitAndEnumData(testing_data, label_map)
 
+    # Combined training and testing data
+    all_data = Dataset.readCSV("./utils/iris_original.csv")
+    [x_all, y_all] = Dataset.splitAndEnumData(all_data, label_map)
+
     # Reduce training and testing data to sepal width and length
-    [x_train, x_test] = plot_Data.reduceDataset2D(x_train, x_test, col1=0, col2=3)
+    c1 = 0 # for best results, use col 2. for worst results, use col 0.
+    c2 = 1 # for best results, use col 3. for worst results, use col 1.
+    [x_train, x_test] = plot_Data.reduceDataset2D(x_train, x_test, col1=c1, col2=c2)
+    [x_all, x_all] = plot_Data.reduceDataset2D(x_all, x_all, col1=c1, col2=c2)
+
+    # Normalize the data
+    if normalize:
+        x_train = Dataset.normalizeData(x_train)
+        x_test = Dataset.normalizeData(x_test)
+        x_all = Dataset.normalizeData(x_all)
+    # Standardize the data
+    elif standardize:
+        x_train = preprocessing.scale(x_train)
+        x_test = preprocessing.scale(x_test)
+        x_all = preprocessing.scale(x_all)
 
     # Train all SVMs
     C = 1.0
@@ -45,13 +68,22 @@ def main():
     for i in range(len(SVMs)):
         # Predict
         svm = SVMs[i]
-        y_pred = svm.testSVM(x_test)
+        if test_all:
+            y_pred = svm.testSVM(x_all)
+        else:
+            y_pred = svm.testSVM(x_test)
 
         # Accuracy
-        print(str.format("{0} Accuracy: {1:.4f}", kernels[i], accuracy_score(y_test, y_pred)))
+        if test_all:
+            print(str.format("{0} Accuracy: {1:.4f}", kernels[i], accuracy_score(y_all, y_pred)))
+        else:
+            print(str.format("{0} Accuracy: {1:.4f}", kernels[i], accuracy_score(y_test, y_pred)))
 
         # Plot
-        plot_Data.plotResults(x_test, y_test, svm)
+        if test_all:
+            plot_Data.plotResults(x_all, y_all, svm)
+        else:
+            plot_Data.plotResults(x_test, y_test, svm)
         plt.savefig("./graphs/" + kernels[i] + "_test.png")
         plt.clf()
 

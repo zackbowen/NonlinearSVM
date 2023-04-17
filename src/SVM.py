@@ -5,37 +5,42 @@ import random
 
 # Paper: https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-98-14.pdf
 class SVM:
-    #weights = []
-
-    x_train = []
-    y_train = []
-
     alphas = []
     b = 0
 
+    x_train = []
+    y_train = []
     errors = []
+
+    # Model parameters
     tol = pow(10,-3)
     eps = pow(10,-3) # (end of pg. 8)
     C = 1.0
     kernel_type = "linear"
     sigma = 1.0
     m = 2
+    c = 1
+    gamma = 0.25
 
-    def trainSVM(self, x_train, y_train, tol=pow(10,-3), eps=pow(10,-3), C=1.0, kernel_type="linear", sigma=1.0, m=2):
-        self.x_train = x_train
-        self.y_train = y_train
-        n = len(self.x_train)
-
+    # Constructor
+    def __init__(self, tol=pow(10,-3), eps=pow(10,-3), C=1.0, kernel_type="linear", sigma=1.0, m=2, gamma=0.25):
         # Set model parameters
-        self.alphas = np.zeros((n,1))
-        self.b = 0
-        self.errors = -1*np.ones((n,1))
         self.tol = tol
         self.eps = eps
         self.C = C
         self.kernel_type = kernel_type
         self.sigma = sigma
         self.m = m
+        self.gamma = gamma
+
+    def trainSVM(self, x_train, y_train):
+        # Set required training variables
+        self.x_train = x_train
+        self.y_train = y_train
+        n = len(self.x_train)
+        self.alphas = np.zeros((n,1))
+        self.b = 0
+        self.errors = -1*np.ones((n,1))
 
         """
             (2.2) - Heuristics for Choosing Which Multipliers To Optimize (pg. 8)
@@ -52,7 +57,7 @@ class SVM:
             # Multiple passes through non-bound samples (alphas multiplier are neither 0 nor C)
             else:
                 for i2 in range(n):
-                    if(self.alphas[i2] != 0 and self.alphas[i2] != C):
+                    if(self.alphas[i2] != 0 and self.alphas[i2] != self.C):
                         num_changed += self.examineExample(i2)
 
             if(examine_all):
@@ -182,19 +187,26 @@ class SVM:
         if self.kernel_type == "linear":
             K_x1_x2 = np.dot(x1,x2)
         elif self.kernel_type == "polynomial" or self.kernel_type == "poly":
-            K_x1_x2 = pow(np.dot(x1,x2),self.m)
+            K_x1_x2 = pow(np.dot(x1,x2)+self.c,self.m)
         elif self.kernel_type == "gaussian" or self.kernel_type == "rbf":
             K_x1_x2 = np.exp(-pow(np.linalg.norm(x1-x2),2) / (2*pow(self.sigma,2)))
+        elif self.kernel_type == "sigmoid":
+            K_x1_x2 = np.tanh(self.gamma*np.dot(x1,x2) + self.c)
         return K_x1_x2
     
     def testSVM(self,x_test) -> int:
         """
-        Accepts a testing sample and evaluates it on the trained weights.
+        Accepts a 2D array of testing samples and evaluates it on the trained weights.
 
         Returns:
+            A vector of length n with the label predictions.
             +1 if positive, -1 otherwise.
         """
-        return np.sign(self.u(x_test))
+        n = len(x_test)
+        y_predict = np.zeros((n,1))
+        for idx in range(n):
+            y_predict[idx] = np.sign(self.u(x_test[idx]))
+        return y_predict
     
     """
         Required Equations ===============================================================
@@ -209,7 +221,7 @@ class SVM:
             Eq. 10 (pg. 4)
         """
         u = 0
-        for j in range(len(self.x_train)-1):
+        for j in range(len(self.x_train)):
             aj = self.alphas[j]
             xj = self.x_train[j]
             yj = self.y_train[j]
@@ -284,9 +296,3 @@ class SVM:
             Eq. 21 (pg. 9)
         """
         return E2 + y1*(a1_new-a1)*k12 + y2*(a2_clipped-a2)*k22 + self.b
-    
-    def w_new(self,a1,a1_new,a2,a2_clipped,x1,x2,y1,y2) -> np.array:
-        """
-            Eq. 22 (pg. 9)
-        """
-        return self.weights + y1*(a1_new-a1)*x1 + y2*(a2_clipped-a2)*x2

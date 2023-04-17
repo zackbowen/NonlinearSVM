@@ -2,6 +2,29 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
+def plotResults(x_test, y_test, svm):
+    h = 0.02
+    x_min, x_max = x_test[:, 0].min() - 1, x_test[:, 0].max() + 1
+    y_min, y_max = x_test[:, 1].min() - 1, x_test[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                        np.arange(y_min, y_max, h))
+
+    # Put the result into a color plot
+    Z = svm.testSVM(np.c_[xx.ravel(), yy.ravel()])
+    
+    # Put the result into a color plot
+    Z = Z.reshape(xx.shape)
+    plt.contourf(xx, yy, Z, cmap=plt.cm.coolwarm, alpha=0.8)
+
+    # Plot also the training points
+    plt.scatter(x_test[:, 0], x_test[:, 1], c=y_test, cmap=plt.cm.coolwarm)
+    plt.xlabel('Sepal Length (cm)')
+    plt.ylabel('Sepal Width (cm)')
+    plt.xlim(xx.min(), xx.max())
+    plt.ylim(yy.min(), yy.max())
+    plt.xticks(())
+    plt.yticks(())
+
 
 def plotData(x, y, _svm):
     '''
@@ -20,7 +43,7 @@ def plotData(x, y, _svm):
 
 
     X, Y = np.meshgrid(xx, yy)
-    forecast = _svm.predict(np.c_[X.ravel(), Y.ravel()])
+    forecast = _svm.testSVM(np.c_[X.ravel(), Y.ravel()])
 
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111)

@@ -91,12 +91,12 @@ def splitDataToCSV(src_filepath: str, training_size=0.50, validation_size=0.00) 
         Splits a dataset and places the training, validation, and testing sets into separate .csv files according
         to the sizes specified by the input params. The size of the testing set is determined by the remaining 
         datapoints not assigned to either the training nor validation set. The sizes of the training and validation sets
-        can be defined either as ratios (0.00, 1.00) or whole numbers [1, length(data)]
+        are defined as ratios (0.00, 1.00)
 
     Parameters:
         src_filepath (str): A filepath string to the dataset to split
-        training_size (float): A ratio/int which determines the training set size (default is 0.50)
-        validation_size (float): A ratio/int which determines the validation set size (default is (0.00)
+        training_size (float): A ratio which determines the training set size (default is 0.50)
+        validation_size (float): A ratio which determines the validation set size (default is (0.00)
 
     Returns:
         None
@@ -105,28 +105,48 @@ def splitDataToCSV(src_filepath: str, training_size=0.50, validation_size=0.00) 
     # Validate input path
     if not os.path.isfile(src_filepath):
         raise Exception("src_filepath is not a file.")
+    
+    # Reject whole number sizes
+    if (training_size >= 1.0) or (validation_size >= 1.0):
+        raise Exception("training_size and validation_size must be ratios.")
 
     # Read input .csv
     data = pd.read_csv(src_filepath, header=0) # include header row
     df = pd.DataFrame(data)
     num_samples = len(df.index)
 
-    # If ratio, convert into integer value for sampling
-    if training_size < 1.0:
-        training_size = round(num_samples*training_size)
-    if validation_size < 1.0:
-        validation_size = round(num_samples*validation_size)
-
     # Get test_size and validate
-    test_size = num_samples - training_size - validation_size
+    test_size = num_samples - round(num_samples*training_size) - round(num_samples*validation_size)
     if test_size <= 0:
         raise Exception("test_size is invalid! Please correct training_size and validation_size.")
     
-    # Randomly sample dataset and place into training, validation, and testing files
-    training_data = df.sample(n=training_size)
-    df = df.drop(training_data.index)
-    validation_data = df.sample(n=validation_size)
-    testing_data = df.drop(validation_data.index)
+    # Get unique class labels
+    classes = df[df.columns[-1]].unique()
+
+    # Group rows by class label then split each class by the ratios specified
+    training_data = pd.DataFrame()
+    validation_data = pd.DataFrame()
+    testing_data = pd.DataFrame()
+    for idx, c in enumerate(classes):
+        # Get first dataframe grouped by class
+        temp_df = df[df[df.columns[-1]] == c]
+
+        # Randomly sample dataset and place into training, validation, and testing files
+        temp_training_data = temp_df.sample(frac=training_size)
+        temp_df = temp_df.drop(temp_training_data.index)
+        temp_validation_data = temp_df.sample(frac=validation_size)
+        temp_testing_data = temp_df.drop(temp_validation_data.index)
+
+        # See if we need initialize dataframe or append to create dataframe to be saved
+        if(idx == 0):
+            training_data = temp_training_data
+            validation_data = temp_validation_data
+            testing_data = temp_testing_data
+        # Append to existing set
+        else:
+            training_data = pd.concat([training_data, temp_training_data])
+            validation_data = pd.concat([validation_data, temp_validation_data])
+            testing_data = pd.concat([testing_data, temp_testing_data])
 
     # Write data to their respective .csv files
     directory, filename = os.path.split(src_filepath)

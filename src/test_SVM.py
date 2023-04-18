@@ -2,6 +2,7 @@ from sklearn.metrics import accuracy_score
 from sklearn import preprocessing
 from matplotlib import pyplot as plt
 import time
+import numpy as np
 
 import Dataset
 from SVM import SVM
@@ -53,39 +54,66 @@ def main():
     sigma = 1.0
     m = 2
     gamma = 1 / len(x_test[1,:]) # 1 / number of features
-
+ 
     SVMs = []
-    kernels = ["linear", "poly", "rbf", "sigmoid"]
+    kernels = ["linear", "polynomial", "gaussian", "sigmoid"]
+    features = ["Sepal Length","Sepal Width","Petal Length","Petal Width"]
     for kernel_type in kernels:
         svm = SVM(kernel_type=kernel_type, C=C, sigma=sigma, m=m, gamma=gamma)
         start = time.time()
         svm.trainSVM(x_train, y_train)
         end = time.time()
         SVMs.append(svm)
-        print(str.format("{0} trained in {1:.4f} seconds", kernel_type, end-start))
+        print(str.format("{0} trained in {1:.3f} seconds", kernel_type, end-start))
 
     # Test the SVMs
-    for i in range(len(SVMs)):
+    fig, axes = plt.subplots(2, 2, figsize=(10,8))
+    fig.add_subplot(111, frameon=False)
+    i = 0
+    for ax in axes.flat:
+        if test_all:
+            x = x_all
+            y = y_all
+        else:
+            x = x_test
+            y = y_test
+
         # Predict
         svm = SVMs[i]
-        if test_all:
-            y_pred = svm.testSVM(x_all)
-        else:
-            y_pred = svm.testSVM(x_test)
+        y_pred = svm.testSVM(x)
 
         # Accuracy
-        if test_all:
-            print(str.format("{0} Accuracy: {1:.4f}", kernels[i], accuracy_score(y_all, y_pred)))
-        else:
-            print(str.format("{0} Accuracy: {1:.4f}", kernels[i], accuracy_score(y_test, y_pred)))
+        print(str.format("{0} Accuracy: {1:.3f}", kernels[i], accuracy_score(y, y_pred)))
 
         # Plot
-        if test_all:
-            plot_Data.plotResults(x_all, y_all, svm)
+        h = 0.02
+        x_min, x_max = x[:, 0].min() - 1, x[:, 0].max() + 1
+        y_min, y_max = x[:, 1].min() - 1, x[:, 1].max() + 1
+        xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                            np.arange(y_min, y_max, h))
+
+        # Put the result into a color plot
+        Z = svm.testSVM(np.c_[xx.ravel(), yy.ravel()])
+        
+        # Put the result into a color plot
+        Z = Z.reshape(xx.shape)
+        if(i==0):
+            img = ax.contourf(xx, yy, Z, cmap=plt.cm.coolwarm, alpha=0.8)
         else:
-            plot_Data.plotResults(x_test, y_test, svm)
-        plt.savefig("./graphs/" + kernels[i] + "_test.png")
-        plt.clf()
+            ax.contourf(xx, yy, Z, cmap=plt.cm.coolwarm, alpha=0.8)
+
+        # Plot also the training points
+        ax.scatter(x[:, 0], x[:, 1], c=y, cmap=plt.cm.coolwarm)
+        ax.set_title(kernels[i].capitalize())
+
+        # Increment i
+        i += 1
+    fig.colorbar(img, ax=axes.ravel().tolist())
+    plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
+    plt.xlabel(features[c1] + " (cm)")
+    plt.ylabel(features[c2] + " (cm)")
+    fig.savefig(str.format("./graphs/{0}_{1}_test.png",features[c1],features[c2]),bbox_inches='tight')
+    plt.clf()
 
 if __name__ == "__main__":
     main()

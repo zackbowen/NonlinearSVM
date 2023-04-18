@@ -19,8 +19,6 @@ def plotResults(x_test, y_test, svm):
 
     # Plot also the training points
     plt.scatter(x_test[:, 0], x_test[:, 1], c=y_test, cmap=plt.cm.coolwarm)
-    plt.xlabel('Sepal Length (cm)')
-    plt.ylabel('Sepal Width (cm)')
     plt.xlim(xx.min(), xx.max())
     plt.ylim(yy.min(), yy.max())
    #plt.xticks(())

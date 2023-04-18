@@ -23,7 +23,7 @@ class SVM:
     gamma = 0.25
 
     # Constructor
-    def __init__(self, tol=pow(10,-3), eps=pow(10,-3), C=1.0, kernel_type="linear", sigma=1.0, m=2, gamma=0.25):
+    def __init__(self, tol=pow(10,-3), eps=pow(10,-3), C=1.0, kernel_type="linear", sigma=1.0, m=2, c=1.0, gamma=0.25):
         # Set model parameters
         self.tol = tol
         self.eps = eps
@@ -31,6 +31,7 @@ class SVM:
         self.kernel_type = kernel_type
         self.sigma = sigma
         self.m = m
+        self.c = c
         self.gamma = gamma
 
     def trainSVM(self, x_train, y_train):

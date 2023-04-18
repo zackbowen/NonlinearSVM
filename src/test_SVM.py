@@ -10,7 +10,7 @@ import plot_Data
 
 test_all = False # If true, predicts using all dataset samples, not just testing samples.
 normalize = False # If true, all data is normalized
-standardize = False # If true, all data is standardized
+standardize = True # If true, all data is standardized
 
 def main():
     # Re-split data
@@ -32,9 +32,9 @@ def main():
     all_data = Dataset.readCSV("./utils/iris_original.csv")
     [x_all, y_all] = Dataset.splitAndEnumData(all_data, label_map)
 
-    # Reduce training and testing data to sepal width and length
-    c1 = 2 # for best results, use col 2. for worst results, use col 0.
-    c2 = 3 # for best results, use col 3. for worst results, use col 1.
+    # Reduce training and testing data to sepal length and width
+    c1 = 0 # for best results, use col 2. for worst results, use col 0.
+    c2 = 1 # for best results, use col 3. for worst results, use col 1.
     [x_train, x_test] = plot_Data.reduceDataset2D(x_train, x_test, col1=c1, col2=c2)
     [x_all, x_all] = plot_Data.reduceDataset2D(x_all, x_all, col1=c1, col2=c2)
 
@@ -53,13 +53,14 @@ def main():
     C = 1.0
     sigma = 1.0
     m = 2
+    c = 1
     gamma = 1 / len(x_test[1,:]) # 1 / number of features
  
     SVMs = []
     kernels = ["linear", "polynomial", "gaussian", "sigmoid"]
     features = ["Sepal Length","Sepal Width","Petal Length","Petal Width"]
     for kernel_type in kernels:
-        svm = SVM(kernel_type=kernel_type, C=C, sigma=sigma, m=m, gamma=gamma)
+        svm = SVM(kernel_type=kernel_type, C=C, sigma=sigma, m=m, c=c, gamma=gamma)
         start = time.time()
         svm.trainSVM(x_train, y_train)
         end = time.time()

@@ -37,8 +37,8 @@ def main():
     # Reduce training and testing data to sepal length and width
     c1 = 0 # for best results, use col 2. for worst results, use col 0.
     c2 = 1 # for best results, use col 3. for worst results, use col 1.
-    #[x_train, x_test] = plot_Data.reduceDataset2D(x_train, x_test, col1=c1, col2=c2)
-    #[x_all, x_all] = plot_Data.reduceDataset2D(x_all, x_all, col1=c1, col2=c2)
+    [x_train, x_test] = plot_Data.reduceDataset2D(x_train, x_test, col1=c1, col2=c2)
+    [x_all, x_all] = plot_Data.reduceDataset2D(x_all, x_all, col1=c1, col2=c2)
 
     # Normalize the data
     if normalize:
